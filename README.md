@@ -44,7 +44,7 @@
 ---
 
 ## 工程结构
-
+```
 app/
 └── src/main/java/cn/wch/ch341pardemo/
 ├── MainActivity.java # UI + 控制入口
@@ -56,7 +56,7 @@ app/
 ├── activity_main.xml # 主界面 layout
 ├── ad9833_item.xml # AD9833 控制面板
 └── mcp41010_item.xml # MCP41010 面板
-
+```
 
 ---
 
