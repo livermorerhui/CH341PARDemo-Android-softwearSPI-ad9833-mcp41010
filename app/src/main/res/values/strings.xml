@@ -1,0 +1,46 @@
+<resources>
+    <string name="app_name">CH341PARDemo</string>
+    <string name="open_device">打开设备</string>
+    <string name="close_device">关闭设备</string>
+    <string name="read">Read</string>
+    <string name="write">Write</string>
+
+    <string-array name="spi_work_mode">
+        <item>单输入输出</item>
+        <item>双输入输出</item>
+    </string-array>
+    <string-array name="spi_data_mode">
+    <item>低位优先</item>
+    <item>高位优先</item>
+    </string-array>
+
+    <string-array name="spi_chip_select">
+        <item>D0</item>
+        <item>D1</item>
+        <item>D2</item>
+    </string-array>
+
+    <string-array name="work_rate">
+        <item>20KHz</item>
+        <item>100KHz</item>
+        <item>400KHz</item>
+        <item>750KHz</item>
+    </string-array>
+    <string-array name="eeprom_type">
+        <item>ID_24C01</item>
+        <item>ID_24C02</item>
+        <item>ID_24C04</item>
+        <item>ID_24C08</item>
+        <item>ID_24C16</item>
+        <item>ID_24C32</item>
+        <item>ID_24C64</item>
+        <item>ID_24C128</item>
+        <item>ID_24C256</item>
+        <item>ID_24C512</item>
+        <item>ID_24C1024</item>
+        <item>ID_24C2048</item>
+        <item>ID_24C4096</item>
+    </string-array>
+
+
+</resources>

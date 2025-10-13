@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="同步串口"
+        android:textColor="@color/title_text_color"
+        android:textSize="@dimen/sp_17"/>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/dp_5"
+        android:background="@drawable/mian_border_style">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/sp_11"
+            android:textColor="@color/title_text_color"
+            android:text="参数设置:CH34xSetStream">
+        </TextView>
+        <Space
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/dp_5"/>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/minor_border_style">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="@dimen/dp_3"
+                android:orientation="horizontal">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:textSize="@dimen/sp_14"
+                    android:text="工作速率:">
+                </TextView>
+
+                <Spinner
+                    android:id="@+id/stream_work_rate_spinner"
+                    android:layout_width="@dimen/dp_150"
+                    android:layout_height="match_parent"></Spinner>
+
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="@dimen/dp_3"
+                android:orientation="horizontal">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:textSize="@dimen/sp_14"
+                    android:text="SPI工作模式:">
+                </TextView>
+                <Spinner
+                    android:id="@+id/spi_work_mode_spinner"
+                    android:layout_width="@dimen/dp_150"
+                    android:layout_height="wrap_content">
+                </Spinner>
+
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="@dimen/dp_3"
+                android:orientation="horizontal">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:textSize="@dimen/sp_14"
+                    android:text="SPI数据模式:">
+                </TextView>
+                <Spinner
+                    android:id="@+id/spi_data_mode_spinner"
+                    android:layout_width="@dimen/dp_150"
+                    android:layout_height="wrap_content">
+                </Spinner>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_margin="@dimen/dp_5">
+                <Button
+                    android:id="@+id/stream_mode_config_btn"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/dp_30"
+                    android:background="@drawable/btn_style"
+                    android:text="同步串口设置"
+                    android:textAllCaps="false"
+                    android:textSize="@dimen/sp_14"
+                    android:textColor="@color/white" />
+            </LinearLayout>
+        </LinearLayout>
+        <include
+            android:id="@+id/spi"
+            layout="@layout/spi_item" />
+        <include
+            android:id="@+id/i2c"
+            layout="@layout/i2c_item" />
+        <include
+            android:id="@+id/eeprom"
+            layout="@layout/eeprom_item" />
+
+
+    </LinearLayout>
+    </LinearLayout>

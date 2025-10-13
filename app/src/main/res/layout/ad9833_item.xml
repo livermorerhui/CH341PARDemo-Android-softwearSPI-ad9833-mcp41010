@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="AD9833 控制"
+        android:textColor="@color/title_text_color"
+        android:textSize="@dimen/sp_17" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/dp_5"
+        android:background="@drawable/mian_border_style"
+        android:orientation="vertical"
+        android:padding="@dimen/dp_5">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="频率 (Hz):"
+                android:textSize="@dimen/sp_14" />
+
+            <EditText
+                android:id="@+id/ad9833_freq_edit"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/dp_5"
+                android:layout_weight="1"
+                android:digits="0123456789."
+                android:gravity="center"
+                android:hint="1000"
+                android:inputType="numberDecimal"
+                android:textSize="@dimen/sp_14" />
+
+            <Button
+                android:id="@+id/ad9833_set_freq_btn"
+                android:layout_width="@dimen/dp_80"
+                android:layout_height="@dimen/dp_32"
+                android:layout_marginStart="@dimen/dp_5"
+                android:background="@drawable/btn_style"
+                android:text="设置"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:textSize="@dimen/sp_14" />
+        </LinearLayout>
+
+        <Space
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/dp_10" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/ad9833_mode_sine_btn"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/dp_32"
+                android:layout_margin="@dimen/dp_3"
+                android:layout_weight="1"
+                android:background="@drawable/btn_style"
+                android:text="正弦"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:textSize="@dimen/sp_14" />
+
+            <Button
+                android:id="@+id/ad9833_mode_triangle_btn"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/dp_32"
+                android:layout_margin="@dimen/dp_3"
+                android:layout_weight="1"
+                android:background="@drawable/btn_style"
+                android:text="三角"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:textSize="@dimen/sp_14" />
+
+            <Button
+                android:id="@+id/ad9833_mode_square1_btn"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/dp_32"
+                android:layout_margin="@dimen/dp_3"
+                android:layout_weight="1"
+                android:background="@drawable/btn_style"
+                android:text="方波/2"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:textSize="@dimen/sp_14" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/ad9833_mode_square2_btn"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/dp_32"
+                android:layout_margin="@dimen/dp_3"
+                android:layout_weight="1"
+                android:background="@drawable/btn_style"
+                android:text="方波"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:textSize="@dimen/sp_14" />
+
+            <Button
+                android:id="@+id/ad9833_mode_off_btn"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/dp_32"
+                android:layout_margin="@dimen/dp_3"
+                android:layout_weight="1"
+                android:background="@drawable/btn_style"
+                android:text="关闭"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:textSize="@dimen/sp_14" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

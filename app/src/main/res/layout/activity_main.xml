@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".MainActivity">
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/nestedScrollView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_margin="@dimen/dp_10">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+            <include
+                android:id="@+id/epp_item"
+                layout="@layout/epp_item"
+                />
+            <Space
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/dp_10"/>
+            <include
+                android:id="@+id/mem_item"
+                layout="@layout/mem_item"
+                />
+            <Space
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/dp_10"/>
+            <include
+                android:id="@+id/stream_item"
+                layout="@layout/stream_item" />
+            <Space
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/dp_10"/>
+            <include
+                android:id="@+id/ad9833_item"
+                layout="@layout/ad9833_item" />
+            <Space
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/dp_10"/>
+            <include
+                android:id="@+id/mcp41010_item"
+                layout="@layout/mcp41010_item" />
+            <Space
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/dp_10"/>
+            <include
+                android:id="@+id/gpio_item"
+                layout="@layout/gpio_item" />
+            <Space
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/dp_10"/>
+        </LinearLayout>
+
+
+    </androidx.core.widget.NestedScrollView>
+
+    <Space
+        android:id="@+id/space"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/dp_10" />
+
+    <Button
+        android:id="@+id/btn_Open"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/dp_10"
+        android:background="@drawable/btn_style"
+        android:text="打开设备"
+        android:textColor="@color/white" />
+</LinearLayout>
