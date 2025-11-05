@@ -26,7 +26,7 @@ public class Mcp41010Controller {
     private static final int CPOL = 0;
     private static final int CPHA = 0;
 
-    private static final byte CMD_WRITE_POT0 = 0x11;
+    public static final int CMD_WRITE_POT0 = 0x11;
 
     private final CH341Manager manager = CH341Manager.getInstance();
 
@@ -62,8 +62,27 @@ public class Mcp41010Controller {
         ensureDevice();
         if (value < 0) value = 0;
         if (value > 255) value = 255;
-        int word = ((CMD_WRITE_POT0 & 0xFF) << 8) | (value & 0xFF);
+        int word = buildCommandWord(value);
         spiWriteWord(word, activeCsMask);
+    }
+
+    public static int buildCommandWord(int value) {
+        int data = Math.max(0, Math.min(255, value));
+        return ((CMD_WRITE_POT0 & 0xFF) << 8) | (data & 0xFF);
+    }
+
+    public void writeRawWordSequence(int[] words, long interWordDelayMicros) throws CH341LibException {
+        ensureDevice();
+        if (words == null || words.length == 0) {
+            return;
+        }
+        long delayMicros = Math.max(0, interWordDelayMicros);
+        for (int word : words) {
+            spiWriteWord(word & 0xFFFF, activeCsMask);
+            if (delayMicros > 0) {
+                delayMicroseconds(delayMicros);
+            }
+        }
     }
 
     private void configureIdleState() throws CH341LibException {

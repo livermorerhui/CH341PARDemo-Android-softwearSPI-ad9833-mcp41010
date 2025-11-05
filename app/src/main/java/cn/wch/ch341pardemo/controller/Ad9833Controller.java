@@ -30,10 +30,14 @@ public class Ad9833Controller {
     private static final int AD_FREQ0 = 14;
     private static final int AD_FREQ1 = 15;
 
+    public static final int DEFAULT_MCLK_HZ = DEFAULT_MCLK;
+    public static final int CONTROL_WORD_BASE = 1 << AD_B28;
+    public static final int RESET_WORD = CONTROL_WORD_BASE | (1 << AD_RESET);
+
     public static final int MODE_BITS_OFF = (1 << AD_SLEEP1) | (1 << AD_SLEEP12);
     public static final int MODE_BITS_TRIANGLE = (1 << AD_MODE);
-    public static final int MODE_BITS_SQUARE2 = (1 << AD_OPBITEN);
-    public static final int MODE_BITS_SQUARE1 = (1 << AD_OPBITEN) | (1 << AD_DIV2);
+    public static final int MODE_BITS_SQUARE1 = (1 << AD_OPBITEN);
+    public static final int MODE_BITS_SQUARE2 = (1 << AD_OPBITEN) | (1 << AD_DIV2);
     public static final int MODE_BITS_SINE = 0;
 
     private static final int MODE_CLEAR_MASK = ~(MODE_BITS_OFF | MODE_BITS_TRIANGLE | MODE_BITS_SQUARE2 | MODE_BITS_SQUARE1);
@@ -94,6 +98,33 @@ public class Ad9833Controller {
         controlRegister &= MODE_CLEAR_MASK;
         controlRegister |= modeBits;
         writeWord(controlRegister);
+    }
+
+    public void setPhaseDegrees(int channel, double phaseDegrees) throws CH341LibException {
+        int phaseValue = normalizePhaseDegrees(phaseDegrees);
+        setPhaseRegister(channel, phaseValue);
+        setActivePhase(channel);
+    }
+
+    public void setPhaseRegister(int channel, int phase12Bit) throws CH341LibException {
+        ensureDevice();
+        int sanitized = Math.max(0, Math.min(0x0FFF, phase12Bit));
+        int phaseWord = buildPhaseWord(channel, sanitized);
+        writeWord(phaseWord);
+    }
+
+    public void writeRawWordSequence(int[] words, long interWordDelayMicros) throws CH341LibException {
+        ensureDevice();
+        if (words == null || words.length == 0) {
+            return;
+        }
+        long delayMicros = Math.max(0, interWordDelayMicros);
+        for (int word : words) {
+            writeWord(word & 0xFFFF);
+            if (delayMicros > 0) {
+                delayMicroseconds(delayMicros);
+            }
+        }
     }
 
     public void setFrequency(int channel, double frequencyHz) throws CH341LibException {
@@ -236,5 +267,88 @@ public class Ad9833Controller {
         if (usbDevice == null) {
             throw new CH341LibException("AD9833 未连接 CH341 设备");
         }
+    }
+
+    private void setActivePhase(int channel) throws CH341LibException {
+        ensureDevice();
+        if (channel == CHANNEL_0) {
+            controlRegister &= ~(1 << AD_PSELECT);
+        } else if (channel == CHANNEL_1) {
+            controlRegister |= (1 << AD_PSELECT);
+        } else {
+            throw new IllegalArgumentException("channel must be 0 or 1");
+        }
+        writeWord(controlRegister);
+    }
+
+    public static int composeControlWord(int modeBits) {
+        int sanitized = modeBits & ~CONTROL_WORD_BASE;
+        return CONTROL_WORD_BASE | sanitized;
+    }
+
+    public static int computeFrequencyRegister(double frequencyHz, int mclkHz) {
+        if (mclkHz <= 0) {
+            throw new IllegalArgumentException("mclkHz must be positive");
+        }
+        double ratio = frequencyHz * (1L << 28) / (double) mclkHz;
+        long rounded = Math.round(ratio);
+        if (rounded < 0) {
+            rounded = 0;
+        }
+        long max = (1L << 28) - 1;
+        if (rounded > max) {
+            rounded = max;
+        }
+        return (int) rounded;
+    }
+
+    public static int buildFrequencyWord(int channel, boolean highWord, int frequencyRegister) {
+        int reg = frequencyRegister & 0x0FFFFFFF;
+        int prefix;
+        if (channel == CHANNEL_0) {
+            prefix = 1 << AD_FREQ0;
+        } else if (channel == CHANNEL_1) {
+            prefix = 1 << AD_FREQ1;
+        } else {
+            throw new IllegalArgumentException("channel must be 0 or 1");
+        }
+        int value;
+        if (highWord) {
+            value = prefix | ((reg >> 14) & 0x3FFF);
+        } else {
+            value = prefix | (reg & 0x3FFF);
+        }
+        return value & 0xFFFF;
+    }
+
+    public static int normalizePhaseDegrees(double phaseDegrees) {
+        if (Double.isNaN(phaseDegrees) || Double.isInfinite(phaseDegrees)) {
+            throw new IllegalArgumentException("phaseDegrees must be finite");
+        }
+        double wrapped = phaseDegrees % 360.0;
+        if (wrapped < 0) {
+            wrapped += 360.0;
+        }
+        int value = (int) Math.round(wrapped * 4096.0 / 360.0);
+        if (value >= 4096) {
+            value = 0;
+        }
+        if (value < 0) {
+            value = 0;
+        }
+        return value & 0x0FFF;
+    }
+
+    public static int buildPhaseWord(int channel, int phase12Bit) {
+        int sanitized = Math.max(0, Math.min(0x0FFF, phase12Bit));
+        int prefix;
+        if (channel == CHANNEL_0) {
+            prefix = 0xC000;
+        } else if (channel == CHANNEL_1) {
+            prefix = 0xE000;
+        } else {
+            throw new IllegalArgumentException("channel must be 0 or 1");
+        }
+        return (prefix | sanitized) & 0xFFFF;
     }
 }

@@ -1,0 +1,387 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="SPI 序列编辑器"
+        android:textColor="@color/title_text_color"
+        android:textSize="@dimen/sp_17" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/dp_5"
+        android:background="@drawable/mian_border_style"
+        android:orientation="vertical"
+        android:padding="@dimen/dp_5">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="格式：设备:指令[ 指令...] | 延迟(ms)，例如 AD9833:2100 2000 | 10"
+            android:textSize="@dimen/sp_13" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/dp_2"
+            android:text="支持设备：AD9833，MCP41010；指令为16位HEX，可多字并列。延迟可选，若缺省则采用默认值。以 # 开头的行视为注释。"
+            android:textSize="@dimen/sp_12" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/dp_10"
+            android:text="波形指令"
+            android:textColor="@color/title_text_color"
+            android:textSize="@dimen/sp_14"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:id="@+id/spi_waveform_builder_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/dp_4"
+            android:background="@drawable/edit_border_style"
+            android:orientation="vertical"
+            android:padding="@dimen/dp_8">
+
+            <RadioGroup
+                android:id="@+id/spi_waveform_radio_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <RadioButton
+                    android:id="@+id/spi_waveform_sine_option"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="正弦波" />
+
+                <RadioButton
+                    android:id="@+id/spi_waveform_triangle_option"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/dp_4"
+                    android:layout_weight="1"
+                    android:text="三角波" />
+
+                <RadioButton
+                    android:id="@+id/spi_waveform_square_option"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/dp_4"
+                    android:layout_weight="1"
+                    android:text="方波" />
+
+                <RadioButton
+                    android:id="@+id/spi_waveform_square_half_option"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/dp_4"
+                    android:layout_weight="1"
+                    android:text="方波/2" />
+            </RadioGroup>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/dp_6"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/spi_waveform_delay_edit"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@drawable/edit_border_style"
+                    android:gravity="center"
+                    android:hint="延迟 (ms)"
+                    android:inputType="number"
+                    android:paddingVertical="@dimen/dp_4"
+                    android:textSize="@dimen/sp_13" />
+
+                <Button
+                    android:id="@+id/spi_waveform_insert_btn"
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/dp_32"
+                    android:layout_marginStart="@dimen/dp_6"
+                    android:layout_weight="1"
+                    android:background="@drawable/btn_style"
+                    android:text="插入波形"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white"
+                    android:textSize="@dimen/sp_13" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/spi_waveform_preview_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/dp_6"
+                android:text="波形预览：--"
+                android:textColor="@color/hint_text_color"
+                android:textSize="@dimen/sp_13" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/dp_12"
+            android:text="频率指令"
+            android:textColor="@color/title_text_color"
+            android:textSize="@dimen/sp_14"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:id="@+id/spi_frequency_builder_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/dp_4"
+            android:background="@drawable/edit_border_style"
+            android:orientation="vertical"
+            android:padding="@dimen/dp_8">
+
+            <EditText
+                android:id="@+id/spi_frequency_value_edit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/edit_border_style"
+                android:gravity="center"
+                android:hint="频率 (Hz)"
+                android:inputType="numberDecimal"
+                android:paddingVertical="@dimen/dp_4"
+                android:textSize="@dimen/sp_13" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/dp_6"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/spi_frequency_delay_edit"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@drawable/edit_border_style"
+                    android:gravity="center"
+                    android:hint="延迟 (ms)"
+                    android:inputType="number"
+                    android:paddingVertical="@dimen/dp_4"
+                    android:textSize="@dimen/sp_13" />
+
+                <Button
+                    android:id="@+id/spi_frequency_insert_btn"
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/dp_32"
+                    android:layout_marginStart="@dimen/dp_6"
+                    android:layout_weight="1"
+                    android:background="@drawable/btn_style"
+                    android:text="插入频率"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white"
+                    android:textSize="@dimen/sp_13" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/spi_frequency_preview_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/dp_6"
+                android:text="频率预览：--"
+                android:textColor="@color/hint_text_color"
+                android:textSize="@dimen/sp_13" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/dp_12"
+            android:text="幅度指令"
+            android:textColor="@color/title_text_color"
+            android:textSize="@dimen/sp_14"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:id="@+id/spi_amplitude_builder_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/dp_4"
+            android:background="@drawable/edit_border_style"
+            android:orientation="vertical"
+            android:padding="@dimen/dp_8">
+
+            <EditText
+                android:id="@+id/spi_amplitude_value_edit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/edit_border_style"
+                android:gravity="center"
+                android:hint="幅度 (0-255)"
+                android:inputType="number"
+                android:paddingVertical="@dimen/dp_4"
+                android:textSize="@dimen/sp_13" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/dp_6"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/spi_amplitude_delay_edit"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@drawable/edit_border_style"
+                    android:gravity="center"
+                    android:hint="延迟 (ms)"
+                    android:inputType="number"
+                    android:paddingVertical="@dimen/dp_4"
+                    android:textSize="@dimen/sp_13" />
+
+                <Button
+                    android:id="@+id/spi_amplitude_insert_btn"
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/dp_32"
+                    android:layout_marginStart="@dimen/dp_6"
+                    android:layout_weight="1"
+                    android:background="@drawable/btn_style"
+                    android:text="插入幅度"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white"
+                    android:textSize="@dimen/sp_13" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/spi_amplitude_preview_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/dp_6"
+                android:text="幅度预览：--"
+                android:textColor="@color/hint_text_color"
+                android:textSize="@dimen/sp_13" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/dp_6"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="默认延迟 (ms)："
+                android:textSize="@dimen/sp_13" />
+
+            <EditText
+                android:id="@+id/spi_sequence_default_delay_edit"
+                android:layout_width="50dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/dp_6"
+                android:layout_weight="1"
+                android:background="@drawable/edit_border_style"
+                android:gravity="center"
+                android:hint="5"
+                android:inputType="number"
+                android:paddingVertical="@dimen/dp_4"
+                android:textSize="@dimen/sp_13" />
+            <Button
+                android:id="@+id/spi_sequence_clear_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="@dimen/dp_6"
+                android:background="@drawable/btn_style"
+                android:paddingHorizontal="@dimen/dp_12"
+                android:text="清空"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:textSize="@dimen/sp_13" />
+            <Button
+                android:id="@+id/spi_sequence_send_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="@dimen/dp_6"
+                android:background="@drawable/btn_style"
+                android:paddingHorizontal="@dimen/dp_12"
+                android:text="发送序列"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:textSize="@dimen/sp_13" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/dp_6"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textColor="@color/title_text_color"
+                android:text="指令详情"
+                android:textSize="@dimen/sp_14" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textColor="@color/title_text_color"
+                android:text=" 执行日志"
+                android:textSize="@dimen/sp_14" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <EditText
+                android:id="@+id/spi_sequence_edit"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/dp_160"
+                android:layout_weight="1"
+                android:background="@drawable/edit_border_style"
+                android:gravity="top|start"
+                android:hint="AD9833:2100 2000 | 10&#10;MCP41010:1100 | 5"
+                android:inputType="textMultiLine"
+                android:overScrollMode="always"
+                android:padding="@dimen/dp_8"
+                android:textSize="@dimen/sp_13" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="@dimen/dp_8"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+
+                <TextView
+                    android:id="@+id/spi_sequence_log_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/edit_border_style"
+                    android:gravity="top|start"
+                    android:minHeight="@dimen/dp_60"
+                    android:padding="@dimen/dp_8"
+                    android:text="--"
+                    android:textSize="@dimen/sp_13" />
+            </LinearLayout>
+        </LinearLayout>
+
+    </LinearLayout>
+</LinearLayout>

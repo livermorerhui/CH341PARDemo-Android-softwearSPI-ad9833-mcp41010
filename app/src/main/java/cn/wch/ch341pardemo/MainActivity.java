@@ -7,6 +7,7 @@ import static cn.wch.ch341pardemo.global.Global.STREAM_CONFIG_SUCCESS;
 import androidx.annotation.ArrayRes;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import android.content.Context;
 import android.hardware.usb.UsbDevice;
@@ -18,9 +19,15 @@ import android.widget.ArrayAdapter;
 import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.Toast;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.text.TextUtils;
 
+import java.text.DecimalFormat;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -46,7 +53,40 @@ public class MainActivity extends AppCompatActivity {
     private final ExecutorService ioExec = Executors.newSingleThreadExecutor();
     private Ad9833Controller ad9833Controller;
     private Mcp41010Controller mcpController;
-    private int mcpCurrentValue = 255;
+    private int mcpCurrentValue = 0;
+    private static final int AD9833_MCLK_HZ = Ad9833Controller.DEFAULT_MCLK_HZ;
+    private final DecimalFormat freqFormatter = createDecimalFormat("0.######");
+    private final DecimalFormat phaseFormatter = createDecimalFormat("0.###");
+    private final TextWatcher ad9833FreqWatcher = new SimpleTextWatcher() {
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+            updateAd9833FrequencyPreview();
+        }
+    };
+    private final TextWatcher ad9833PhaseWatcher = new SimpleTextWatcher() {
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+            updateAd9833PhasePreview();
+        }
+    };
+    private final TextWatcher waveformInputWatcher = new SimpleTextWatcher() {
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+            updateWaveformPreview(false);
+        }
+    };
+    private final TextWatcher frequencyInputWatcher = new SimpleTextWatcher() {
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+            updateFrequencyPreview(false);
+        }
+    };
+    private final TextWatcher amplitudeInputWatcher = new SimpleTextWatcher() {
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+            updateAmplitudePreview(false);
+        }
+    };
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -74,11 +114,31 @@ public class MainActivity extends AppCompatActivity {
         setBtnEnable(false);
         setAd9833ControlsEnabled(false);
         setMcpControlsEnabled(false);
+        setSpiSequenceControlsEnabled(false);
         ad9833Controller = new Ad9833Controller();
         mcpController = new Mcp41010Controller();
         binding.mcp41010Item.mcp41010ValueSeek.setMax(255);
         binding.mcp41010Item.mcp41010ValueSeek.setProgress(mcpCurrentValue);
+        binding.ad9833Item.ad9833FreqEdit.addTextChangedListener(ad9833FreqWatcher);
+        binding.ad9833Item.ad9833PhaseEdit.addTextChangedListener(ad9833PhaseWatcher);
+        binding.ad9833Item.ad9833PhaseEdit.setText("0");
+        binding.spiSequenceItem.spiSequenceDefaultDelayEdit.setText("5");
+        binding.spiSequenceItem.spiSequenceLogText.setText("--");
+        binding.spiSequenceItem.spiWaveformDelayEdit.addTextChangedListener(waveformInputWatcher);
+        binding.spiSequenceItem.spiFrequencyValueEdit.addTextChangedListener(frequencyInputWatcher);
+        binding.spiSequenceItem.spiFrequencyDelayEdit.addTextChangedListener(frequencyInputWatcher);
+        binding.spiSequenceItem.spiAmplitudeValueEdit.addTextChangedListener(amplitudeInputWatcher);
+        binding.spiSequenceItem.spiAmplitudeDelayEdit.addTextChangedListener(amplitudeInputWatcher);
+        binding.spiSequenceItem.spiWaveformRadioGroup.check(R.id.spi_waveform_sine_option);
+        binding.spiSequenceItem.spiFrequencyValueEdit.setText("0");
+        binding.spiSequenceItem.spiAmplitudeValueEdit.setText(String.valueOf(mcpCurrentValue));
+        updateAd9833StaticCommandLabels();
+        updateAd9833FrequencyPreview();
+        updateAd9833PhasePreview();
         updateMcpValueLabel(mcpCurrentValue);
+        updateWaveformPreview(false);
+        updateFrequencyPreview(false);
+        updateAmplitudePreview(false);
 //        setSPIBtnEnable(false,false);
     }
 
@@ -187,11 +247,23 @@ public class MainActivity extends AppCompatActivity {
         });
 
         binding.ad9833Item.ad9833SetFreqBtn.setOnClickListener(view -> handleAd9833SetFrequency());
-        binding.ad9833Item.ad9833ModeSineBtn.setOnClickListener(view -> handleAd9833SetMode(Ad9833Controller.MODE_BITS_SINE, "正弦波"));
-        binding.ad9833Item.ad9833ModeTriangleBtn.setOnClickListener(view -> handleAd9833SetMode(Ad9833Controller.MODE_BITS_TRIANGLE, "三角波"));
-        binding.ad9833Item.ad9833ModeSquare1Btn.setOnClickListener(view -> handleAd9833SetMode(Ad9833Controller.MODE_BITS_SQUARE1, "方波/2"));
-        binding.ad9833Item.ad9833ModeSquare2Btn.setOnClickListener(view -> handleAd9833SetMode(Ad9833Controller.MODE_BITS_SQUARE2, "方波"));
-        binding.ad9833Item.ad9833ModeOffBtn.setOnClickListener(view -> handleAd9833SetMode(Ad9833Controller.MODE_BITS_OFF, "关闭输出"));
+        binding.ad9833Item.ad9833ResetSendBtn.setOnClickListener(view -> handleAd9833Reset());
+        binding.ad9833Item.ad9833SineSendBtn.setOnClickListener(view -> handleAd9833SetMode(Ad9833Controller.MODE_BITS_SINE, "正弦波"));
+        binding.ad9833Item.ad9833TriangleSendBtn.setOnClickListener(view -> handleAd9833SetMode(Ad9833Controller.MODE_BITS_TRIANGLE, "三角波"));
+        binding.ad9833Item.ad9833SquareSendBtn.setOnClickListener(view -> handleAd9833SetMode(Ad9833Controller.MODE_BITS_SQUARE2, "方波"));
+        binding.ad9833Item.ad9833SquareHalfSendBtn.setOnClickListener(view -> handleAd9833SetMode(Ad9833Controller.MODE_BITS_SQUARE1, "方波/2"));
+        binding.ad9833Item.ad9833MuteSendBtn.setOnClickListener(view -> handleAd9833SetMode(Ad9833Controller.MODE_BITS_OFF, "关闭输出"));
+
+        binding.ad9833Item.ad9833PhaseSendBtn.setOnClickListener(view -> handleAd9833SetPhase());
+        binding.spiSequenceItem.spiSequenceClearBtn.setOnClickListener(view -> binding.spiSequenceItem.spiSequenceEdit.setText(""));
+        binding.spiSequenceItem.spiSequenceSendBtn.setOnClickListener(view -> handleSpiSequenceSend());
+        binding.spiSequenceItem.spiWaveformInsertBtn.setOnClickListener(view -> handleWaveformInsert());
+        binding.spiSequenceItem.spiFrequencyInsertBtn.setOnClickListener(view -> handleFrequencyInsert());
+        binding.spiSequenceItem.spiAmplitudeInsertBtn.setOnClickListener(view -> handleAmplitudeInsert());
+        binding.spiSequenceItem.spiWaveformRadioGroup.setOnCheckedChangeListener((group, checkedId) -> {
+            updateWaveformPreview(false);
+            updateFrequencyPreview(false);
+        });
 
         binding.mcp41010Item.mcp41010ValueSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -233,11 +305,14 @@ public class MainActivity extends AppCompatActivity {
 
     private void setAd9833ControlsEnabled(boolean enable) {
         binding.ad9833Item.ad9833SetFreqBtn.setEnabled(enable);
-        binding.ad9833Item.ad9833ModeSineBtn.setEnabled(enable);
-        binding.ad9833Item.ad9833ModeTriangleBtn.setEnabled(enable);
-        binding.ad9833Item.ad9833ModeSquare1Btn.setEnabled(enable);
-        binding.ad9833Item.ad9833ModeSquare2Btn.setEnabled(enable);
-        binding.ad9833Item.ad9833ModeOffBtn.setEnabled(enable);
+        binding.ad9833Item.ad9833ResetSendBtn.setEnabled(enable);
+        binding.ad9833Item.ad9833SineSendBtn.setEnabled(enable);
+        binding.ad9833Item.ad9833TriangleSendBtn.setEnabled(enable);
+        binding.ad9833Item.ad9833SquareSendBtn.setEnabled(enable);
+        binding.ad9833Item.ad9833SquareHalfSendBtn.setEnabled(enable);
+        binding.ad9833Item.ad9833MuteSendBtn.setEnabled(enable);
+
+        binding.ad9833Item.ad9833PhaseSendBtn.setEnabled(enable);
     }
 
     private void setMcpControlsEnabled(boolean enable) {
@@ -245,6 +320,9 @@ public class MainActivity extends AppCompatActivity {
         binding.mcp41010Item.mcp41010SetBtn.setEnabled(enable);
     }
 
+    private void setSpiSequenceControlsEnabled(boolean enable) {
+        binding.spiSequenceItem.spiSequenceSendBtn.setEnabled(enable);
+    }
     private void handleAd9833SetFrequency() {
         if (!isDeviceOpen || usbDevice == null) {
             showToast("请先打开设备");
@@ -289,8 +367,583 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private void handleAd9833Reset() {
+        if (!isDeviceOpen || usbDevice == null) {
+            showToast("请先打开设备");
+            return;
+        }
+        ioExec.execute(() -> {
+            try {
+                ad9833Controller.reset();
+                runOnUiThread(() -> showToast("已发送复位指令"));
+            } catch (CH341LibException e) {
+                runOnUiThread(() -> showToast("复位失败: " + e.getMessage()));
+            }
+        });
+    }
+
+    private void handleAd9833SetPhase() {
+        if (!isDeviceOpen || usbDevice == null) {
+            showToast("请先打开设备");
+            return;
+        }
+        String phaseStr = binding.ad9833Item.ad9833PhaseEdit.getText().toString().trim();
+        if (phaseStr.isEmpty()) {
+            showToast("相位不能为空");
+            return;
+        }
+        double phase;
+        try {
+            phase = Double.parseDouble(phaseStr);
+        } catch (NumberFormatException e) {
+            showToast("相位格式不正确");
+            return;
+        }
+        final double finalPhase = phase;
+        ioExec.execute(() -> {
+            try {
+                ad9833Controller.setPhaseDegrees(Ad9833Controller.CHANNEL_0, finalPhase);
+                runOnUiThread(() -> showToast("相位指令已发送"));
+            } catch (IllegalArgumentException | CH341LibException e) {
+                runOnUiThread(() -> showToast("设置相位失败: " + e.getMessage()));
+            }
+        });
+    }
+
+    private void updateAd9833StaticCommandLabels() {
+        binding.ad9833Item.ad9833ResetCmdText.setText(formatWord(Ad9833Controller.RESET_WORD));
+        binding.ad9833Item.ad9833SineCmdText.setText(formatWord(Ad9833Controller.composeControlWord(Ad9833Controller.MODE_BITS_SINE)));
+        binding.ad9833Item.ad9833TriangleCmdText.setText(formatWord(Ad9833Controller.composeControlWord(Ad9833Controller.MODE_BITS_TRIANGLE)));
+        binding.ad9833Item.ad9833SquareCmdText.setText(formatWord(Ad9833Controller.composeControlWord(Ad9833Controller.MODE_BITS_SQUARE2)));
+        binding.ad9833Item.ad9833SquareHalfCmdText.setText(formatWord(Ad9833Controller.composeControlWord(Ad9833Controller.MODE_BITS_SQUARE1)));
+        binding.ad9833Item.ad9833MuteCmdText.setText(formatWord(Ad9833Controller.composeControlWord(Ad9833Controller.MODE_BITS_OFF)));
+    }
+
+    private void updateAd9833FrequencyPreview() {
+        String freqStr = binding.ad9833Item.ad9833FreqEdit.getText().toString().trim();
+        if (freqStr.isEmpty()) {
+            binding.ad9833Item.ad9833FreqFormulaText.setText("公式：round(f × 2^28 / 25,000,000)");
+            binding.ad9833Item.ad9833FreqRegisterText.setText("寄存器值：--");
+            binding.ad9833Item.ad9833FreqWordsText.setText("指令内容：--");
+            return;
+        }
+        double freq;
+        try {
+            freq = Double.parseDouble(freqStr);
+        } catch (NumberFormatException e) {
+            binding.ad9833Item.ad9833FreqFormulaText.setText("公式：输入格式错误");
+            binding.ad9833Item.ad9833FreqRegisterText.setText("寄存器值：--");
+            binding.ad9833Item.ad9833FreqWordsText.setText("指令内容：--");
+            return;
+        }
+        if (freq < 0) {
+            binding.ad9833Item.ad9833FreqFormulaText.setText("公式：频率必须大于等于 0");
+            binding.ad9833Item.ad9833FreqRegisterText.setText("寄存器值：--");
+            binding.ad9833Item.ad9833FreqWordsText.setText("指令内容：--");
+            return;
+        }
+        int freqRegister = Ad9833Controller.computeFrequencyRegister(freq, AD9833_MCLK_HZ);
+        String freqDisplay = freqFormatter.format(freq);
+        binding.ad9833Item.ad9833FreqFormulaText.setText(String.format(Locale.US,
+                "公式：round(%s × 2^28 / 25,000,000) = %d", freqDisplay, freqRegister));
+        binding.ad9833Item.ad9833FreqRegisterText.setText(String.format(Locale.US,
+                "寄存器值：%d (0x%07X)", freqRegister, freqRegister));
+        int lsbWord = Ad9833Controller.buildFrequencyWord(Ad9833Controller.CHANNEL_0, false, freqRegister);
+        int msbWord = Ad9833Controller.buildFrequencyWord(Ad9833Controller.CHANNEL_0, true, freqRegister);
+        binding.ad9833Item.ad9833FreqWordsText.setText("指令内容：" + joinWords(lsbWord, msbWord));
+    }
+
+    private void updateAd9833PhasePreview() {
+        String phaseStr = binding.ad9833Item.ad9833PhaseEdit.getText().toString().trim();
+        if (phaseStr.isEmpty()) {
+            binding.ad9833Item.ad9833PhaseFormulaText.setText("公式：round(相位 × 4096 / 360)");
+            binding.ad9833Item.ad9833PhaseRegisterText.setText("寄存器值：--");
+            binding.ad9833Item.ad9833PhaseWordsText.setText("指令内容：--");
+            return;
+        }
+        double phase;
+        try {
+            phase = Double.parseDouble(phaseStr);
+        } catch (NumberFormatException e) {
+            binding.ad9833Item.ad9833PhaseFormulaText.setText("公式：输入格式错误");
+            binding.ad9833Item.ad9833PhaseRegisterText.setText("寄存器值：--");
+            binding.ad9833Item.ad9833PhaseWordsText.setText("指令内容：--");
+            return;
+        }
+        int phaseValue;
+        try {
+            phaseValue = Ad9833Controller.normalizePhaseDegrees(phase);
+        } catch (IllegalArgumentException e) {
+            binding.ad9833Item.ad9833PhaseFormulaText.setText("公式：输入范围错误");
+            binding.ad9833Item.ad9833PhaseRegisterText.setText("寄存器值：--");
+            binding.ad9833Item.ad9833PhaseWordsText.setText("指令内容：--");
+            return;
+        }
+        String phaseDisplay = phaseFormatter.format(phase);
+        binding.ad9833Item.ad9833PhaseFormulaText.setText(String.format(Locale.US,
+                "公式：round(%s × 4096 / 360) = %d", phaseDisplay, phaseValue));
+        binding.ad9833Item.ad9833PhaseRegisterText.setText(String.format(Locale.US,
+                "寄存器值：%d (0x%03X)", phaseValue, phaseValue));
+        int phaseWord = Ad9833Controller.buildPhaseWord(Ad9833Controller.CHANNEL_0, phaseValue);
+        binding.ad9833Item.ad9833PhaseWordsText.setText("指令内容：" + formatWord(phaseWord));
+    }
+
+    private void updateMcpInstructionDetails(int value) {
+        int clamped = Math.max(0, Math.min(255, value));
+        binding.mcp41010Item.mcp41010RegisterText.setText(String.format(Locale.US,
+                "数据值：%d (0x%02X)", clamped, clamped));
+        int commandWord = Mcp41010Controller.buildCommandWord(clamped);
+        binding.mcp41010Item.mcp41010CommandText.setText("指令内容：" + formatWord(commandWord));
+        binding.mcp41010Item.mcp41010BytesText.setText(String.format(Locale.US,
+                "字节序列：%02X %02X", (commandWord >> 8) & 0xFF, commandWord & 0xFF));
+    }
+
+    private void handleSpiSequenceSend() {
+        if (!isDeviceOpen || usbDevice == null) {
+            showToast("请先打开设备");
+            return;
+        }
+        String rawSequence = binding.spiSequenceItem.spiSequenceEdit.getText().toString();
+        String defaultDelayStr = binding.spiSequenceItem.spiSequenceDefaultDelayEdit.getText().toString().trim();
+        long defaultDelayMs;
+        try {
+            defaultDelayMs = parseDelayMilliseconds(defaultDelayStr);
+        } catch (IllegalArgumentException e) {
+            showToast(e.getMessage());
+            return;
+        }
+        List<SpiSequenceEntry> entries;
+        try {
+            entries = parseSpiSequence(rawSequence, defaultDelayMs);
+        } catch (IllegalArgumentException e) {
+            showToast(e.getMessage());
+            return;
+        }
+        if (entries.isEmpty()) {
+            showToast("请输入有效序列");
+            return;
+        }
+        binding.spiSequenceItem.spiSequenceLogText.setText("执行中...");
+        ioExec.execute(() -> executeSpiSequence(entries));
+    }
+
+    private void insertSpiSequenceSample() {
+        String sample = "AD9833:2100 2000 | 10\nMCP41010:1100 | 20";
+        String current = binding.spiSequenceItem.spiSequenceEdit.getText().toString();
+        if (current.trim().isEmpty()) {
+            binding.spiSequenceItem.spiSequenceEdit.setText(sample);
+        } else {
+            binding.spiSequenceItem.spiSequenceEdit.append("\n" + sample);
+        }
+    }
+
+    private void handleWaveformInsert() {
+        SpiCommandBuildResult result = buildWaveformCommand();
+        if (!result.valid) {
+            updateWaveformPreview(false);
+            showToast(!TextUtils.isEmpty(result.errorMessage) ? result.errorMessage : "请完善波形参数");
+            return;
+        }
+        appendSequenceLine(result.commandText);
+        renderWaveformPreview(result, true);
+    }
+
+    private void handleFrequencyInsert() {
+        SpiCommandBuildResult result = buildFrequencyCommand();
+        if (!result.valid) {
+            updateFrequencyPreview(false);
+            showToast(!TextUtils.isEmpty(result.errorMessage) ? result.errorMessage : "请完善频率参数");
+            return;
+        }
+        appendSequenceLine(result.commandText);
+        renderFrequencyPreview(result, true);
+    }
+
+    private void handleAmplitudeInsert() {
+        SpiCommandBuildResult result = buildAmplitudeCommand();
+        if (!result.valid) {
+            updateAmplitudePreview(false);
+            showToast(!TextUtils.isEmpty(result.errorMessage) ? result.errorMessage : "请完善幅度参数");
+            return;
+        }
+        appendSequenceLine(result.commandText);
+        renderAmplitudePreview(result, true);
+    }
+
+    private void updateWaveformPreview(boolean highlightInserted) {
+        renderWaveformPreview(buildWaveformCommand(), highlightInserted);
+    }
+
+    private void updateFrequencyPreview(boolean highlightInserted) {
+        renderFrequencyPreview(buildFrequencyCommand(), highlightInserted);
+    }
+
+    private void updateAmplitudePreview(boolean highlightInserted) {
+        renderAmplitudePreview(buildAmplitudeCommand(), highlightInserted);
+    }
+
+    private void renderWaveformPreview(SpiCommandBuildResult result, boolean highlightWhenValid) {
+        renderPreview(binding.spiSequenceItem.spiWaveformPreviewText, "波形预览", result, highlightWhenValid);
+    }
+
+    private void renderFrequencyPreview(SpiCommandBuildResult result, boolean highlightWhenValid) {
+        renderPreview(binding.spiSequenceItem.spiFrequencyPreviewText, "频率预览", result, highlightWhenValid);
+    }
+
+    private void renderAmplitudePreview(SpiCommandBuildResult result, boolean highlightWhenValid) {
+        renderPreview(binding.spiSequenceItem.spiAmplitudePreviewText, "幅度预览", result, highlightWhenValid);
+    }
+
+    private void renderPreview(android.widget.TextView previewView, String label, SpiCommandBuildResult result, boolean highlightWhenValid) {
+        if (previewView == null) {
+            return;
+        }
+        String content = result.commandText;
+        String display;
+        if (TextUtils.isEmpty(content)) {
+            display = label + "：--";
+        } else if (result.valid) {
+            display = label + "：\n" + content;
+        } else {
+            display = label + "：" + content;
+        }
+        previewView.setText(display);
+        int colorRes = (highlightWhenValid && result.valid) ? R.color.title_text_color : R.color.hint_text_color;
+        previewView.setTextColor(ContextCompat.getColor(this, colorRes));
+    }
+
+    private SpiCommandBuildResult buildWaveformCommand() {
+        if (binding == null) {
+            return new SpiCommandBuildResult(false, "", "绑定未初始化");
+        }
+        int modeBits = resolveSelectedWaveformModeBits();
+        if (modeBits == -1) {
+            String message = "请选择波形";
+            return new SpiCommandBuildResult(false, message, message);
+        }
+        String delayStr = binding.spiSequenceItem.spiWaveformDelayEdit.getText().toString().trim();
+        long delayMs = 0;
+        boolean hasDelay = !delayStr.isEmpty();
+        if (hasDelay) {
+            try {
+                delayMs = Long.parseLong(delayStr);
+            } catch (NumberFormatException e) {
+                String message = "延迟格式不正确";
+                return new SpiCommandBuildResult(false, message, message);
+            }
+            if (delayMs < 0) {
+                String message = "延迟不能为负值";
+                return new SpiCommandBuildResult(false, message, message);
+            }
+        }
+        int controlWord = Ad9833Controller.composeControlWord(modeBits);
+        StringBuilder builder = new StringBuilder();
+        builder.append(String.format(Locale.US, "AD9833:%04X %04X", controlWord, controlWord));
+        if (hasDelay) {
+            builder.append(" | ").append(delayMs);
+        }
+        return new SpiCommandBuildResult(true, builder.toString(), null);
+    }
+
+    private SpiCommandBuildResult buildFrequencyCommand() {
+        if (binding == null) {
+            return new SpiCommandBuildResult(false, "", "绑定未初始化");
+        }
+        String freqStr = binding.spiSequenceItem.spiFrequencyValueEdit.getText().toString().trim();
+        if (freqStr.isEmpty()) {
+            String message = "请输入频率";
+            return new SpiCommandBuildResult(false, message, message);
+        }
+        double frequency;
+        try {
+            frequency = Double.parseDouble(freqStr);
+        } catch (NumberFormatException e) {
+            String message = "频率格式不正确";
+            return new SpiCommandBuildResult(false, message, message);
+        }
+        if (frequency < 0) {
+            String message = "频率必须大于等于 0";
+            return new SpiCommandBuildResult(false, message, message);
+        }
+        String delayStr = binding.spiSequenceItem.spiFrequencyDelayEdit.getText().toString().trim();
+        long delayMs = 0;
+        boolean hasDelay = !delayStr.isEmpty();
+        if (hasDelay) {
+            try {
+                delayMs = Long.parseLong(delayStr);
+            } catch (NumberFormatException e) {
+                String message = "延迟格式不正确";
+                return new SpiCommandBuildResult(false, message, message);
+            }
+            if (delayMs < 0) {
+                String message = "延迟不能为负值";
+                return new SpiCommandBuildResult(false, message, message);
+            }
+        }
+        int frequencyRegister = Ad9833Controller.computeFrequencyRegister(frequency, AD9833_MCLK_HZ);
+        int freqLsbWord = Ad9833Controller.buildFrequencyWord(Ad9833Controller.CHANNEL_0, false, frequencyRegister);
+        int freqMsbWord = Ad9833Controller.buildFrequencyWord(Ad9833Controller.CHANNEL_0, true, frequencyRegister);
+        StringBuilder builder = new StringBuilder();
+        builder.append(String.format(Locale.US, "AD9833:%04X %04X", freqLsbWord, freqMsbWord));
+        if (hasDelay) {
+            builder.append(" | ").append(delayMs);
+        }
+        return new SpiCommandBuildResult(true, builder.toString(), null);
+    }
+
+    private SpiCommandBuildResult buildAmplitudeCommand() {
+        if (binding == null) {
+            return new SpiCommandBuildResult(false, "", "绑定未初始化");
+        }
+        String ampStr = binding.spiSequenceItem.spiAmplitudeValueEdit.getText().toString().trim();
+        if (ampStr.isEmpty()) {
+            String message = "请输入幅度";
+            return new SpiCommandBuildResult(false, message, message);
+        }
+        int amplitude;
+        try {
+            amplitude = Integer.parseInt(ampStr);
+        } catch (NumberFormatException e) {
+            String message = "幅度格式不正确";
+            return new SpiCommandBuildResult(false, message, message);
+        }
+        if (amplitude < 0 || amplitude > 255) {
+            String message = "幅度必须在 0~255";
+            return new SpiCommandBuildResult(false, message, message);
+        }
+        String delayStr = binding.spiSequenceItem.spiAmplitudeDelayEdit.getText().toString().trim();
+        long delayMs = 0;
+        boolean hasDelay = !delayStr.isEmpty();
+        if (hasDelay) {
+            try {
+                delayMs = Long.parseLong(delayStr);
+            } catch (NumberFormatException e) {
+                String message = "延迟格式不正确";
+                return new SpiCommandBuildResult(false, message, message);
+            }
+            if (delayMs < 0) {
+                String message = "延迟不能为负值";
+                return new SpiCommandBuildResult(false, message, message);
+            }
+        }
+        int commandWord = Mcp41010Controller.buildCommandWord(amplitude);
+        StringBuilder builder = new StringBuilder();
+        builder.append(String.format(Locale.US, "MCP41010:%04X", commandWord));
+        if (hasDelay) {
+            builder.append(" | ").append(delayMs);
+        }
+        return new SpiCommandBuildResult(true, builder.toString(), null);
+    }
+
+    private int resolveSelectedWaveformModeBits() {
+        if (binding == null) {
+            return -1;
+        }
+        int checkedId = binding.spiSequenceItem.spiWaveformRadioGroup.getCheckedRadioButtonId();
+        if (checkedId == R.id.spi_waveform_sine_option) {
+            return Ad9833Controller.MODE_BITS_SINE;
+        } else if (checkedId == R.id.spi_waveform_triangle_option) {
+            return Ad9833Controller.MODE_BITS_TRIANGLE;
+        } else if (checkedId == R.id.spi_waveform_square_option) {
+            return Ad9833Controller.MODE_BITS_SQUARE2;
+        } else if (checkedId == R.id.spi_waveform_square_half_option) {
+            return Ad9833Controller.MODE_BITS_SQUARE1;
+        }
+        return -1;
+    }
+
+    private void appendSequenceLine(String line) {
+        if (TextUtils.isEmpty(line)) {
+            return;
+        }
+        Editable editable = binding.spiSequenceItem.spiSequenceEdit.getText();
+        if (editable.length() > 0 && editable.charAt(editable.length() - 1) != '\n') {
+            editable.append('\n');
+        }
+        editable.append(line);
+    }
+
+    private long parseDelayMilliseconds(String delayStr) {
+        if (delayStr == null || delayStr.isEmpty()) {
+            return 0L;
+        }
+        try {
+            long value = Long.parseLong(delayStr);
+            if (value < 0) {
+                throw new IllegalArgumentException("默认延迟不能为负值");
+            }
+            return value;
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("默认延迟格式错误");
+        }
+    }
+
+    private List<SpiSequenceEntry> parseSpiSequence(String raw, long defaultDelayMs) {
+        List<SpiSequenceEntry> entries = new ArrayList<>();
+        if (raw == null) {
+            return entries;
+        }
+        String[] lines = raw.split("\\r?\\n");
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i].trim();
+            if (line.isEmpty() || line.startsWith("#")) {
+                continue;
+            }
+            String[] delaySplit = line.split("\\|", 2);
+            String commandPart = delaySplit[0].trim();
+            long delayMs = defaultDelayMs;
+            if (delaySplit.length > 1) {
+                String delayPart = delaySplit[1].trim();
+                if (!delayPart.isEmpty()) {
+                    try {
+                        delayMs = Long.parseLong(delayPart);
+                    } catch (NumberFormatException e) {
+                        throw new IllegalArgumentException("第 " + (i + 1) + " 行延迟格式错误");
+                    }
+                    if (delayMs < 0) {
+                        throw new IllegalArgumentException("第 " + (i + 1) + " 行延迟不能为负值");
+                    }
+                }
+            }
+            String[] deviceSplit = commandPart.split(":", 2);
+            if (deviceSplit.length != 2) {
+                throw new IllegalArgumentException("第 " + (i + 1) + " 行格式错误，应为 设备:指令");
+            }
+            SequenceTarget target = parseSequenceTarget(deviceSplit[0].trim(), i + 1);
+            String payload = deviceSplit[1].trim();
+            if (payload.isEmpty()) {
+                throw new IllegalArgumentException("第 " + (i + 1) + " 行缺少指令内容");
+            }
+            String[] wordTokens = payload.split("[ ,]+");
+            ArrayList<Integer> words = new ArrayList<>();
+            for (String token : wordTokens) {
+                if (token == null || token.trim().isEmpty()) {
+                    continue;
+                }
+                words.add(parseHexWord(token.trim(), i + 1));
+            }
+            if (words.isEmpty()) {
+                throw new IllegalArgumentException("第 " + (i + 1) + " 行无有效指令");
+            }
+            int[] wordArray = new int[words.size()];
+            for (int j = 0; j < words.size(); j++) {
+                wordArray[j] = words.get(j);
+            }
+            entries.add(new SpiSequenceEntry(target, wordArray, delayMs, i + 1));
+        }
+        return entries;
+    }
+
+    private SequenceTarget parseSequenceTarget(String token, int lineNumber) {
+        if (token == null || token.isEmpty()) {
+            throw new IllegalArgumentException("第 " + lineNumber + " 行未指定设备");
+        }
+        String normalized = token.trim().toUpperCase(Locale.US);
+        switch (normalized) {
+            case "AD9833":
+                return SequenceTarget.AD9833;
+            case "MCP41010":
+            case "MCP":
+            case "MCP41":
+                return SequenceTarget.MCP41010;
+            default:
+                throw new IllegalArgumentException("第 " + lineNumber + " 行设备未知：" + token);
+        }
+    }
+
+    private int parseHexWord(String token, int lineNumber) {
+        String normalized = token.toUpperCase(Locale.US);
+        if (normalized.startsWith("0X")) {
+            normalized = normalized.substring(2);
+        }
+        if (normalized.endsWith("H")) {
+            normalized = normalized.substring(0, normalized.length() - 1);
+        }
+        normalized = normalized.replace("_", "");
+        if (normalized.isEmpty()) {
+            throw new IllegalArgumentException("第 " + lineNumber + " 行指令格式错误");
+        }
+        int value;
+        try {
+            value = Integer.parseInt(normalized, 16);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("第 " + lineNumber + " 行指令格式错误：" + token);
+        }
+        return value & 0xFFFF;
+    }
+
+    private void executeSpiSequence(List<SpiSequenceEntry> entries) {
+        StringBuilder logBuilder = new StringBuilder();
+        boolean success = true;
+        int step = 1;
+        for (SpiSequenceEntry entry : entries) {
+            try {
+                if (entry.target == SequenceTarget.AD9833) {
+                    ad9833Controller.writeRawWordSequence(entry.words, 0);
+                } else {
+                    mcpController.writeRawWordSequence(entry.words, 0);
+                }
+                logBuilder.append(String.format(Locale.US,
+                        "%02d. [行%d] %s -> %s",
+                        step,
+                        entry.lineNumber,
+                        entry.target.getLabel(),
+                        joinWords(entry.words)));
+                if (entry.delayMs > 0) {
+                    logBuilder.append(String.format(Locale.US, " | 延迟 %d ms", entry.delayMs));
+                }
+                logBuilder.append('\n');
+            } catch (CH341LibException e) {
+                success = false;
+                logBuilder.append(String.format(Locale.US,
+                        "%02d. [行%d] %s 发送失败: %s\n",
+                        step,
+                        entry.lineNumber,
+                        entry.target.getLabel(),
+                        e.getMessage()));
+                break;
+            }
+            step++;
+            if (entry.delayMs > 0) {
+                try {
+                    Thread.sleep(entry.delayMs);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    success = false;
+                    logBuilder.append("执行被中断\n");
+                    break;
+                }
+            }
+        }
+        final boolean finalSuccess = success;
+        final String logText = logBuilder.length() == 0 ? "--" : logBuilder.toString().trim();
+        runOnUiThread(() -> {
+            binding.spiSequenceItem.spiSequenceLogText.setText(logText);
+            showToast(finalSuccess ? "序列发送完成" : "序列发送中断");
+        });
+    }
+
+    private String formatWord(int word) {
+        return String.format(Locale.US, "0x%04X", word & 0xFFFF);
+    }
+
+    private String joinWords(int... words) {
+        if (words == null || words.length == 0) {
+            return "--";
+        }
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < words.length; i++) {
+            if (i > 0) {
+                builder.append(' ');
+            }
+            builder.append(formatWord(words[i]));
+        }
+        return builder.toString();
+    }
+
     private void updateMcpValueLabel(int value) {
         binding.mcp41010Item.mcp41010ValueText.setText(String.valueOf(value));
+        updateMcpInstructionDetails(value);
     }
 
     private void handleMcpSetValue() {
@@ -315,11 +968,11 @@ public class MainActivity extends AppCompatActivity {
                 ad9833Controller.attachDevice(usbDevice);
                 ad9833Controller.setCsChannel(0);
                 ad9833Controller.begin();
-                ad9833Controller.setFrequency(Ad9833Controller.CHANNEL_0, 1000.0);
+                ad9833Controller.setFrequency(Ad9833Controller.CHANNEL_0, 0.0);
                 ad9833Controller.setActiveFrequency(Ad9833Controller.CHANNEL_0);
-                ad9833Controller.setMode(Ad9833Controller.MODE_BITS_SINE);
+                ad9833Controller.setMode(Ad9833Controller.MODE_BITS_OFF);
                 runOnUiThread(() -> {
-                    binding.ad9833Item.ad9833FreqEdit.setText("1000");
+                    binding.ad9833Item.ad9833FreqEdit.setText("0");
                     showToast("AD9833 初始化完成");
                 });
             } catch (CH341LibException e) {
@@ -393,6 +1046,7 @@ public class MainActivity extends AppCompatActivity {
                     setStreamBtnEnable(true,false);
                     setAd9833ControlsEnabled(true);
                     setMcpControlsEnabled(true);
+                    setSpiSequenceControlsEnabled(true);
                     binding.btnOpen.setText(getResources().getString(R.string.close_device));
                     break;
                 case CLOSE_DEVICE://USB设备关闭
@@ -400,6 +1054,7 @@ public class MainActivity extends AppCompatActivity {
                     setStreamBtnEnable(false,false);
                     setAd9833ControlsEnabled(false);
                     setMcpControlsEnabled(false);
+                    setSpiSequenceControlsEnabled(false);
                     binding.btnOpen.setText(getResources().getString(R.string.open_device));
                     break;
                 case STREAM_CONFIG_SUCCESS: //同步串流模式设置成功
@@ -442,8 +1097,8 @@ public class MainActivity extends AppCompatActivity {
                 isDeviceOpen = true;
                 this.usbDevice=usbDevice;
                 sendMessage(OPEN_DEVICE);
-                initializeAd9833();
                 initializeMcp41010();
+                initializeAd9833();
             }else {
                 CH341Manager.getInstance().requestPermission(context,usbDevice);//申请权限
             }
@@ -1020,6 +1675,61 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(MainActivity.this,message,Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private enum SequenceTarget {
+        AD9833("AD9833"),
+        MCP41010("MCP41010");
+
+        private final String label;
+
+        SequenceTarget(String label) {
+            this.label = label;
+        }
+
+        public String getLabel() {
+            return label;
+        }
+    }
+
+    private static final class SpiCommandBuildResult {
+        final boolean valid;
+        final String commandText;
+        final String errorMessage;
+
+        SpiCommandBuildResult(boolean valid, String commandText, String errorMessage) {
+            this.valid = valid;
+            this.commandText = commandText;
+            this.errorMessage = errorMessage;
+        }
+    }
+
+    private static final class SpiSequenceEntry {
+        final SequenceTarget target;
+        final int[] words;
+        final long delayMs;
+        final int lineNumber;
+
+        SpiSequenceEntry(SequenceTarget target, int[] words, long delayMs, int lineNumber) {
+            this.target = target;
+            this.words = words;
+            this.delayMs = delayMs;
+            this.lineNumber = lineNumber;
+        }
+    }
+
+    private static DecimalFormat createDecimalFormat(String pattern) {
+        DecimalFormat decimalFormat = new DecimalFormat(pattern);
+        decimalFormat.setGroupingUsed(false);
+        return decimalFormat;
+    }
+
+    private abstract static class SimpleTextWatcher implements TextWatcher {
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+
+        @Override
+        public void afterTextChanged(Editable s) { }
     }
 
     @Override

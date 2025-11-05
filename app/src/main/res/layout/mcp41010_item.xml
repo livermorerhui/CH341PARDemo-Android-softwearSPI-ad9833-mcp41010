@@ -23,41 +23,95 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:paddingHorizontal="@dimen/dp_8">
 
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="数值 (0-255):"
-                android:textSize="@dimen/sp_14" />
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
-            <TextView
-                android:id="@+id/mcp41010_value_text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/dp_8"
-                android:text="255"
-                android:textColor="@color/main_color"
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="数值 (0-255):"
+                    android:textSize="@dimen/sp_14" />
+
+                <TextView
+                    android:id="@+id/mcp41010_value_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/dp_8"
+                    android:text="0"
+                    android:textColor="@color/main_color"
+                    android:textSize="@dimen/sp_14" />
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/mcp41010_set_btn"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/dp_40"
+                android:layout_weight="1"
+                android:layout_marginStart="@dimen/dp_16"
+                android:background="@drawable/btn_style"
+                android:gravity="center"
+                android:text="写入电位器"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
                 android:textSize="@dimen/sp_14" />
         </LinearLayout>
 
         <SeekBar
             android:id="@+id/mcp41010_value_seek"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="48dp"
             android:layout_marginTop="@dimen/dp_8"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
             android:max="255"
-            android:progress="255" />
+            android:progress="0" />
 
-        <Button
-            android:id="@+id/mcp41010_set_btn"
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/dp_10"
+            android:text="指令详情"
+            android:textColor="@color/title_text_color"
+            android:textSize="@dimen/sp_14"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/mcp41010_formula_text"
             android:layout_width="match_parent"
-            android:layout_height="@dimen/dp_32"
-            android:layout_marginTop="@dimen/dp_8"
-            android:background="@drawable/btn_style"
-            android:text="写入电位器"
-            android:textAllCaps="false"
-            android:textColor="@color/white"
-            android:textSize="@dimen/sp_14" />
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/dp_4"
+            android:text="公式：指令 = 0x11 &lt;&lt; 8 | 数据值"
+            android:textSize="@dimen/sp_13" />
+
+        <TextView
+            android:id="@+id/mcp41010_register_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/dp_2"
+            android:text="数据值：--"
+            android:textSize="@dimen/sp_13" />
+
+        <TextView
+            android:id="@+id/mcp41010_command_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/dp_2"
+            android:text="指令内容：--"
+            android:textSize="@dimen/sp_13" />
+
+        <TextView
+            android:id="@+id/mcp41010_bytes_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/dp_2"
+            android:text="字节序列：--"
+            android:textSize="@dimen/sp_13" />
     </LinearLayout>
 </LinearLayout>

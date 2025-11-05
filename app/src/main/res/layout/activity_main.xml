@@ -18,6 +18,25 @@
             android:layout_height="match_parent"
             android:orientation="vertical">
             <include
+                android:id="@+id/ad9833_item"
+                layout="@layout/ad9833_item" />
+            <Space
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/dp_10"/>
+            <include
+                android:id="@+id/mcp41010_item"
+                layout="@layout/mcp41010_item" />
+            <Space
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/dp_10"/>
+            <include
+                android:id="@+id/spi_sequence_item"
+                layout="@layout/spi_sequence_item" />
+            <Space
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/dp_10"/>
+
+            <include
                 android:id="@+id/epp_item"
                 layout="@layout/epp_item"
                 />
@@ -37,18 +56,7 @@
             <Space
                 android:layout_width="wrap_content"
                 android:layout_height="@dimen/dp_10"/>
-            <include
-                android:id="@+id/ad9833_item"
-                layout="@layout/ad9833_item" />
-            <Space
-                android:layout_width="wrap_content"
-                android:layout_height="@dimen/dp_10"/>
-            <include
-                android:id="@+id/mcp41010_item"
-                layout="@layout/mcp41010_item" />
-            <Space
-                android:layout_width="wrap_content"
-                android:layout_height="@dimen/dp_10"/>
+
             <include
                 android:id="@+id/gpio_item"
                 layout="@layout/gpio_item" />
